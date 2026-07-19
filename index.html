@@ -2,262 +2,211 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#2D6A4F" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#059669" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="NutriLine" />
-  <meta name="description" content="Suivi alimentaire personnalisé – plan diététique Line" />
+  <meta name="description" content="Journal alimentaire — NutriLine" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" href="icons/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
   <title>NutriLine</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="app">
 
-    <!-- SPLASH -->
-    <div id="splash">
-      <div class="splash-inner">
-        <div class="splash-leaf">🌿</div>
-        <h1 class="splash-title">NutriLine</h1>
-        <p class="splash-sub">Ton suivi alimentaire</p>
-      </div>
-    </div>
-
-    <!-- TOP BAR -->
+    <!-- HEADER -->
     <header class="topbar">
-      <div class="topbar-left">
-        <span class="app-name">NutriLine</span>
-        <span class="today-date" id="header-date"></span>
+      <div class="brand">
+        <svg class="brand-leaf" width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M6 18C6 10 11 5 19 5c0 8-5 13-13 13z" fill="#059669"/>
+          <path d="M6 18C9 14 12 11 16 8" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M6 18l-2 2.5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="brand-name">NutriLine</span>
       </div>
       <button class="icon-btn" id="notif-btn" aria-label="Rappels collation">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       </button>
     </header>
 
     <!-- SCREENS -->
-    <main id="main-content">
+    <main id="main">
 
-      <!-- HOME -->
-      <section id="screen-home" class="screen active">
-        <div class="home-hero">
-          <div class="hero-greeting" id="greeting"></div>
-          <div class="hero-stats">
-            <div class="stat-pill" id="meals-pill">
-              <span class="stat-num" id="meals-done-count">0</span>
-              <span class="stat-label">/ 5 repas</span>
+      <!-- AUJOURD'HUI (timeline) -->
+      <section id="screen-today" class="screen active">
+        <div class="day-head">
+          <h1 id="today-title">Aujourd'hui</h1>
+          <p id="today-sub"></p>
+        </div>
+        <div class="timeline" id="timeline"></div>
+
+        <div class="pad-x">
+          <div class="soft-card activity-card">
+            <div class="row-between">
+              <div>
+                <div class="card-t">Activité physique</div>
+                <div class="card-s" id="activity-sub">Pas encore aujourd'hui</div>
+              </div>
+              <button class="switch" id="activity-toggle" aria-pressed="false"></button>
             </div>
-            <div class="stat-pill stat-blue" id="hydro-pill">
-              <span class="stat-num" id="hydro-stat">0</span>
-              <span class="stat-label">/ 6 verres</span>
-            </div>
+            <input type="text" id="activity-input" class="input hidden" placeholder="Ringfit, marche, Pilates…" />
+          </div>
+
+          <div class="soft-card">
+            <div class="card-t" style="margin-bottom:8px">Note du jour</div>
+            <textarea id="global-note" class="input" rows="2" placeholder="Énergie, humeur, contexte…"></textarea>
           </div>
         </div>
-
-        <div class="section-label">Repas du jour</div>
-        <div class="card meals-card" id="meals-list">
-          <!-- rendered by JS -->
-        </div>
-
-        <div class="section-label">Hydratation</div>
-        <div class="card">
-          <div class="hydro-header">
-            <span class="hydro-big" id="hydro-count">0</span>
-            <span class="hydro-sub">verres · objectif 1,5 L</span>
-          </div>
-          <div class="hydro-track" id="hydro-track"></div>
-          <p class="hydro-hint">Eau, infusion, café, thé ✓</p>
-        </div>
-
-        <div class="section-label">Activité physique</div>
-        <div class="card activity-card">
-          <div class="activity-row">
-            <span class="activity-label">Activité aujourd'hui</span>
-            <button class="toggle-switch" id="activity-toggle" aria-pressed="false"></button>
-          </div>
-          <input type="text" id="activity-input" class="text-input activity-hidden" placeholder="Type d'activité (Ringfit, course, Pilates…)" />
-        </div>
-
-        <div class="section-label">Notes rapides</div>
-        <div class="card">
-          <textarea id="quick-note" class="textarea" rows="3" placeholder="Ressenti du jour, énergie, faim…"></textarea>
-        </div>
-
-        <div style="height: 90px;"></div>
+        <div class="nav-spacer"></div>
       </section>
 
       <!-- PLAN -->
       <section id="screen-plan" class="screen">
-        <div class="plan-hero">
-          <h2 class="plan-hero-title">Mon plan<br><em>alimentaire</em></h2>
-          <p class="plan-hero-sub">Julie Havez · diététicienne nutritionniste</p>
+        <div class="day-head">
+          <h1>Mon plan</h1>
+          <p>Julie Havez · diététicienne nutritionniste</p>
         </div>
-
-        <div id="plan-content">
-          <!-- rendered by JS -->
-        </div>
-
-        <div style="height: 90px;"></div>
+        <div id="plan-content" class="pad-x"></div>
+        <div class="nav-spacer"></div>
       </section>
 
-      <!-- JOURNAL -->
-      <section id="screen-journal" class="screen">
-        <div class="section-label" style="margin-top: 16px;">Journal du <span id="journal-date-label"></span></div>
-
-        <div id="journal-entries">
-          <!-- rendered by JS -->
-        </div>
-
-        <div class="card" style="margin: 0 16px 12px;">
-          <div class="journal-meal-label">💬 Ressenti global</div>
-          <textarea id="j-global" class="textarea" rows="3" placeholder="Énergie, humeur, satisfaction…"></textarea>
-        </div>
-
-        <button class="save-btn" id="save-journal-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Sauvegarder le journal
-        </button>
-
-        <div style="height: 90px;"></div>
-      </section>
-
-      <!-- RECAP -->
-      <section id="screen-recap" class="screen">
-        <div class="section-label" style="margin-top: 16px;">Récap du jour</div>
-
-        <div class="recap-grid">
-          <div class="recap-card recap-card-green">
-            <div class="recap-big" id="recap-meals-count">0/5</div>
-            <div class="recap-label-s">repas validés</div>
+      <!-- HISTORIQUE -->
+      <section id="screen-history" class="screen">
+        <div class="day-head row-between">
+          <div>
+            <h1>Historique</h1>
+            <p id="cal-streak-sub"></p>
           </div>
-          <div class="recap-card recap-card-blue">
-            <div class="recap-big" id="recap-hydro-count">0/6</div>
-            <div class="recap-label-s">verres d'eau</div>
-          </div>
+          <button class="pill-btn" id="open-export">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+            PDF
+          </button>
         </div>
 
-        <div class="card" style="margin: 0 16px 12px;">
-          <div class="recap-section-title">Repas</div>
-          <div id="recap-meals-detail"></div>
-        </div>
-
-        <div class="card" style="margin: 0 16px 12px;">
-          <div class="recap-section-title">Activité physique</div>
-          <div id="recap-activity-detail"></div>
-        </div>
-
-        <div class="card" style="margin: 0 16px 12px;">
-          <div class="recap-section-title">Journal alimentaire</div>
-          <div id="recap-journal-detail"></div>
-        </div>
-
-        <div style="height: 90px;"></div>
-      </section>
-
-      <!-- EXPORT -->
-      <section id="screen-export" class="screen">
-        <div class="topbar" style="padding-top:16px">
-          <div><div style="font-family:var(--font-display);font-size:20px;color:var(--green)">Export PDF</div><div style="font-size:12px;color:var(--text-muted)">Envoyer à Julie Havez</div></div>
-        </div>
-        <div style="padding:16px 16px 0">
-          <div class="card" style="margin:0 0 14px">
-            <div class="recap-section-title">Période</div>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
-              <div style="display:flex;align-items:center;justify-content:space-between">
-                <label style="font-size:14px;color:var(--text)">Du</label>
-                <input type="date" id="export-date-from" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;font-size:14px;font-family:var(--font);color:var(--text);background:var(--bg);outline:none" />
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between">
-                <label style="font-size:14px;color:var(--text)">Au</label>
-                <input type="date" id="export-date-to" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;font-size:14px;font-family:var(--font);color:var(--text);background:var(--bg);outline:none" />
-              </div>
+        <div class="pad-x">
+          <div class="soft-card cal-card">
+            <div class="cal-nav">
+              <button class="cal-arrow" id="cal-prev" aria-label="Mois précédent">‹</button>
+              <div class="cal-month" id="cal-month"></div>
+              <button class="cal-arrow" id="cal-next" aria-label="Mois suivant">›</button>
             </div>
-            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap" id="quick-ranges"></div>
-          </div>
-          <div class="card" style="margin:0 0 14px">
-            <div class="recap-section-title">Inclure dans le PDF</div>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px" id="export-options"></div>
-          </div>
-          <div id="export-preview-card" class="card" style="margin:0 0 14px;display:none">
-            <div class="recap-section-title">Aperçu</div>
-            <div id="export-preview-content" style="font-size:13px;color:var(--text-muted);margin-top:6px;line-height:1.6"></div>
+            <div class="cal-grid cal-head">
+              <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+            </div>
+            <div class="cal-grid" id="cal-days"></div>
           </div>
         </div>
-        <button class="save-btn" id="generate-pdf-btn" style="margin:0 16px 8px;width:calc(100% - 32px)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
-          Générer le PDF
-        </button>
-        <div style="height:90px"></div>
+
+        <div class="pad-x" id="day-detail"></div>
+        <div class="nav-spacer"></div>
+      </section>
+
+      <!-- STATS -->
+      <section id="screen-stats" class="screen">
+        <div class="day-head">
+          <h1>Stats</h1>
+          <p>Ta régularité sur les 30 derniers jours</p>
+        </div>
+        <div class="pad-x" id="stats-content"></div>
+        <div class="nav-spacer"></div>
+      </section>
+
+      <!-- EXPORT (sheet-triggered screen) -->
+      <section id="screen-export" class="screen">
+        <div class="day-head">
+          <h1>Export PDF</h1>
+          <p>À envoyer à Julie Havez</p>
+        </div>
+        <div class="pad-x">
+          <div class="soft-card">
+            <div class="card-t" style="margin-bottom:10px">Période</div>
+            <div class="row-between" style="margin-bottom:8px">
+              <label class="lbl">Du</label>
+              <input type="date" id="export-from" class="input date-input" />
+            </div>
+            <div class="row-between">
+              <label class="lbl">Au</label>
+              <input type="date" id="export-to" class="input date-input" />
+            </div>
+            <div class="chip-row" id="quick-ranges"></div>
+          </div>
+          <div class="soft-card">
+            <div class="card-t" style="margin-bottom:8px">Inclure</div>
+            <div id="export-options"></div>
+          </div>
+          <div class="soft-card" id="export-preview" style="display:none"></div>
+          <button class="primary-btn" id="generate-pdf">Générer le PDF</button>
+        </div>
+        <div class="nav-spacer"></div>
       </section>
 
     </main>
 
     <!-- BOTTOM NAV -->
-    <nav class="bottom-nav" role="navigation" aria-label="Navigation principale">
-      <button class="nav-btn active" data-screen="home" aria-label="Accueil">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span>Accueil</span>
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-screen="today">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+        <span>Aujourd'hui</span>
       </button>
-      <button class="nav-btn" data-screen="plan" aria-label="Mon plan">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        <span>Mon plan</span>
+      <button class="nav-btn" data-screen="plan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Plan</span>
       </button>
-      <button class="nav-btn" data-screen="journal" aria-label="Journal">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        <span>Journal</span>
+      <button class="nav-btn" data-screen="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Historique</span>
       </button>
-      <button class="nav-btn" data-screen="recap" aria-label="Récap">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span>Récap</span>
-      </button>
-      <button class="nav-btn" data-screen="export" aria-label="Export PDF">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
-        <span>Export</span>
+      <button class="nav-btn" data-screen="stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Stats</span>
       </button>
     </nav>
 
-    <!-- TOAST -->
-    <div class="toast" id="toast" role="alert" aria-live="polite"></div>
-
-    <!-- FLOATING WATER BUTTON -->
-    <button class="water-fab" id="water-fab" aria-label="Ajouter un verre d'eau">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6 8 4 12 4 15a8 8 0 0 0 16 0c0-3-2-7-8-13z"/></svg>
-      <span class="water-fab-count" id="water-fab-count">0/6</span>
-    </button>
-
-    <!-- WATER QUICK PANEL -->
-    <div class="water-panel" id="water-panel" aria-hidden="true">
-      <div class="water-panel-inner">
-        <div class="water-panel-header">
-          <span class="water-panel-title">Hydratation</span>
-          <button class="water-panel-close" id="water-panel-close" aria-label="Fermer">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+    <!-- ENTRY SHEET -->
+    <div class="overlay" id="overlay"></div>
+    <div class="sheet" id="entry-sheet" aria-hidden="true">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head">
+        <div class="sheet-title" id="sheet-title">Repas</div>
+        <button class="icon-btn small" id="sheet-close" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="sheet-body">
+        <div class="row-between" style="margin-bottom:12px">
+          <label class="lbl">Heure</label>
+          <input type="time" id="sheet-time" class="input date-input" />
         </div>
-        <div class="water-big-display">
-          <span class="water-big-num" id="water-big-num">0</span>
-          <span class="water-big-sub">/ 6 verres · 1,5 L</span>
+        <label class="lbl-block">Ce que j'ai mangé</label>
+        <textarea id="sheet-text" class="input" rows="3" placeholder="Décris ton repas…"></textarea>
+        <label class="lbl-block" style="margin-top:12px">Commentaire <span class="lbl-opt">(optionnel)</span></label>
+        <textarea id="sheet-note" class="input" rows="2" placeholder="Nouvel aliment, envie, contexte…"></textarea>
+        <div class="sheet-actions">
+          <button class="ghost-btn danger hidden" id="sheet-delete">Effacer</button>
+          <button class="primary-btn" id="sheet-save">Enregistrer</button>
         </div>
-        <div class="water-glasses-row" id="water-glasses-row"></div>
-        <div class="water-actions">
-          <button class="water-minus" id="water-minus" aria-label="Retirer un verre">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-          <button class="water-plus" id="water-plus" aria-label="Ajouter un verre">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Ajouter un verre
-          </button>
-        </div>
-        <p class="water-hint">Eau, infusion, café, thé ✓</p>
       </div>
     </div>
-    <div class="water-overlay" id="water-overlay"></div>
 
+    <!-- DAY DETAIL SHEET (history) -->
+    <div class="sheet" id="day-sheet" aria-hidden="true">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head">
+        <div class="sheet-title" id="day-sheet-title"></div>
+        <button class="icon-btn small" id="day-sheet-close" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="sheet-body" id="day-sheet-body"></div>
+    </div>
+
+    <div class="toast" id="toast" role="alert" aria-live="polite"></div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -268,9 +217,7 @@
   <script src="js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-      });
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
     }
   </script>
 </body>

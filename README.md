@@ -1,77 +1,47 @@
-# 🌿 NutriLine
+# 🌿 NutriLine v2
 
-Application mobile de suivi alimentaire personnalisée selon le plan diététique de Julie Havez.
+Journal alimentaire — refonte complète.
 
-## Fonctionnalités
+## Nouveautés v2
 
-- 🍽️ **Suivi des repas** — Valider ses 5 repas/collations du jour en un tap
-- 📋 **Plan alimentaire** — Consultation du plan diéto toujours disponible, même offline
-- ✍️ **Journal** — Saisir ce qu'on a mangé + ressenti (emoji) pour chaque repas
-- 💧 **Hydratation** — Tracker visuel 6 verres / 1,5 L
-- 💪 **Activité physique** — Toggle + type d'activité
-- 🔔 **Rappels collation** — Notifications à 10h et 16h
-- 📊 **Récap journalier** — Vue synthèse de toute la journée
-- 📴 **Mode offline** — Fonctionne sans connexion (PWA + Service Worker)
-- 📱 **Installable** — "Ajouter à l'écran d'accueil" sur iOS et Android
+- **Timeline** : le journal est le cœur de l'app, fil de la journée avec heures réelles
+- **Historique** : calendrier mensuel, un point vert = jour renseigné, tap pour voir le détail
+- **Stats** : série en cours 🔥, meilleure série, jours suivis /30, régularité par repas, graphique 14 jours
+- **Extras** : ajouter un grignotage ou un repas hors plan avec son heure
+- **Design** : nouveau look épuré (Inter, cartes douces, mode sombre auto)
+- **Nouveau logo**
+- Suppression : cases à cocher des repas (le journal fait foi) et suivi d'hydratation
 
-## Déploiement sur GitHub Pages
+## Corrections importantes
 
-### 1. Créer le repo GitHub
+- **Bug de fuseau horaire** : le v1 utilisait l'heure UTC pour la clé du jour — une entrée après ~23h pouvait partir sur le lendemain. Corrigé (heure locale).
+- **Mises à jour** : le service worker est passé en *network-first* pour le HTML — les nouvelles versions arrivent dès le prochain lancement, sans vider le cache.
+- **Migration automatique** : les données saisies dans la v1 sont converties au nouveau format à la première lecture.
+- Panel bloqué en bas d'écran : supprimé avec l'hydratation.
+
+## Déploiement
 
 ```bash
-git init
 git add .
-git commit -m "feat: initial NutriLine app"
-git branch -M main
-git remote add origin https://github.com/TON_USERNAME/nutriline.git
-git push -u origin main
+git commit -m "feat: NutriLine v2 — refonte complète"
+git push
 ```
 
-### 2. Activer GitHub Pages
+GitHub Pages met à jour en 1–2 min. Sur iPhone, ferme et rouvre l'app.
 
-1. Aller dans **Settings** du repo
-2. Section **Pages** → Source : `Deploy from a branch`
-3. Branch : `main` / `/ (root)`
-4. Sauvegarder → l'app sera dispo sur `https://TON_USERNAME.github.io/nutriline/`
-
-### 3. Installer sur iPhone
-
-1. Ouvrir l'URL dans **Safari** (important : pas Chrome)
-2. Appuyer sur le bouton **Partager** (carré avec flèche)
-3. Sélectionner **"Sur l'écran d'accueil"**
-4. Nommer l'app "NutriLine" → **Ajouter**
-
-L'app s'installe comme une vraie app native avec icône et mode plein écran !
-
-## Structure du projet
+## Structure
 
 ```
-nutrition-app/
-├── index.html          # Structure HTML principale
-├── manifest.json       # Config PWA (nom, icônes, couleurs)
-├── sw.js               # Service Worker (cache offline)
-├── css/
-│   └── style.css       # Styles complets
+nutriline/
+├── index.html
+├── manifest.json
+├── sw.js
+├── css/style.css
 ├── js/
-│   ├── data.js         # Données du plan alimentaire
-│   ├── state.js        # Gestion état + localStorage
-│   ├── ui.js           # Fonctions de rendu
-│   └── app.js          # Logique principale + navigation
+│   ├── data.js      # créneaux repas + plan
+│   ├── state.js     # persistance + migration v1
+│   ├── ui.js        # timeline, calendrier, stats
+│   ├── app.js       # navigation, sheets, notifs
+│   └── export.js    # PDF
 └── icons/
-    ├── icon-192.png    # Icône app
-    └── icon-512.png    # Icône app grande taille
 ```
-
-## Personnalisation
-
-Pour modifier le plan alimentaire, éditer le fichier `js/data.js` :
-- `MEALS_CONFIG` — infos des repas (nom, heure, description)
-- `PLAN_DATA` — contenu détaillé du plan
-- `PLAN_RULES` — règles générales
-
-## Tech stack
-
-- HTML/CSS/JS vanilla — aucune dépendance, zéro build
-- PWA (Progressive Web App) avec Service Worker
-- localStorage pour la persistance des données
-- Notifications Web API pour les rappels

@@ -1,249 +1,230 @@
-// ── APP LOGIC ──
+// ═══ NutriLine v2 — logique app ═══
 
-// ── DATE ──
-const DAYS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-const MONTHS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-
-function formatDate() {
-  const d = new Date();
-  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
-}
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Bonjour, Line 🌱';
-  if (h < 18) return 'Bonne journée, Line ☀️';
-  return 'Bonsoir, Line 🌙';
-}
+let sheetCtx = null; // { kind: 'slot'|'extra', id }
 
 // ── NAVIGATION ──
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-
   document.getElementById('screen-' + name).classList.add('active');
-  document.querySelector(`[data-screen="${name}"]`).classList.add('active');
+  const btn = document.querySelector(`.nav-btn[data-screen="${name}"]`);
+  if (btn) btn.classList.add('active');
 
-  if (name === 'recap') renderRecap();
-  if (name === 'journal') renderJournalEntries();
+  if (name === 'history') renderCalendar();
+  if (name === 'stats') renderStats();
   if (name === 'export') initExportScreen();
 }
 
-// ── MEAL TOGGLE ──
-function toggleMeal(id) {
-  const newVal = !getState().meals[id];
-  setMeal(id, newVal);
-  updateMealCheck(id);
-  updateHomeStats();
-  if (newVal) showToast(`✓ ${MEALS_CONFIG.find(m=>m.id===id)?.name} validé !`);
+// ── ENTRY SHEET ──
+function openEntrySheet(kind, id) {
+  const s = getState();
+  sheetCtx = { kind, id };
+
+  let title = 'Nouvelle entrée';
+  let entry = null;
+
+  if (kind === 'slot') {
+    const slot = SLOTS.find(x => x.id === id);
+    title = `${slot.emoji} ${slot.name}`;
+    entry = s.entries[id];
+    document.getElementById('sheet-time').value = (entry && entry.time) || slot.time;
+  } else if (kind === 'extra' && id) {
+    const x = s.extras.find(e => e.id === id);
+    title = '✚ Autre';
+    entry = x;
+    document.getElementById('sheet-time').value = (x && x.time) || currentTime();
+  } else {
+    title = '✚ Autre';
+    document.getElementById('sheet-time').value = currentTime();
+  }
+
+  document.getElementById('sheet-title').textContent = title;
+  document.getElementById('sheet-text').value = (entry && entry.text) || '';
+  document.getElementById('sheet-note').value = (entry && entry.note) || '';
+  document.getElementById('sheet-delete').classList.toggle('hidden', !(entry && entry.text));
+
+  document.getElementById('entry-sheet').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(() => document.getElementById('sheet-text').focus(), 350);
 }
 
-// ── HYDRATION ──
-function clickHydro(i) {
-  const current = getState().hydro;
-  const newVal = (i < current) ? i : i + 1;
-  setHydro(newVal);
-  renderHydroTrack();
-  updateHomeStats();
-  if (newVal >= 6) showToast('🎉 Objectif hydratation atteint !');
+function closeSheets() {
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+  document.getElementById('overlay').classList.remove('show');
+  sheetCtx = null;
 }
 
-// ── ACTIVITY ──
-function toggleActivity() {
-  const newVal = !getState().activity;
-  setActivity(newVal);
-  updateActivityUI();
-  if (newVal) showToast('💪 Activité enregistrée !');
+function saveSheet() {
+  if (!sheetCtx) return;
+  const time = document.getElementById('sheet-time').value;
+  const text = document.getElementById('sheet-text').value.trim();
+  const note = document.getElementById('sheet-note').value.trim();
+
+  if (sheetCtx.kind === 'slot') {
+    setEntry(sheetCtx.id, text || note ? { time, text, note } : null);
+  } else if (sheetCtx.kind === 'extra') {
+    if (sheetCtx.id) {
+      if (text || note) updateExtra(sheetCtx.id, { time, text, note });
+      else removeExtra(sheetCtx.id);
+    } else if (text || note) {
+      addExtra({ time, text, note });
+    }
+  }
+  closeSheets();
+  renderTimeline();
+  showToast('✓ Enregistré');
 }
 
-// ── JOURNAL ──
-function onJournalInput(id, val) {
-  setJournal(id, val);
+function deleteSheet() {
+  if (!sheetCtx) return;
+  if (sheetCtx.kind === 'slot') setEntry(sheetCtx.id, null);
+  else if (sheetCtx.kind === 'extra' && sheetCtx.id) removeExtra(sheetCtx.id);
+  closeSheets();
+  renderTimeline();
+  showToast('Effacé');
 }
 
-function onNoteInput(id, val) {
-  setNote(id, val);
+function currentTime() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+// ── DAY DETAIL SHEET (historique) ──
+function openDaySheet(key) {
+  const day = readDay(key);
+  const dt = keyToDate(key);
+  document.getElementById('day-sheet-title').textContent =
+    `${FR_DAYS[dt.getDay()]} ${dt.getDate()} ${FR_MONTHS[dt.getMonth()]}`;
+
+  const body = document.getElementById('day-sheet-body');
+  if (!day || !dayHasData(key)) {
+    body.innerHTML = '<p class="ds-empty" style="padding:8px 0 16px">Aucune donnée ce jour-là.</p>';
+  } else {
+    const rows = [];
+    SLOTS.forEach(slot => {
+      const e = day.entries[slot.id];
+      if (e && e.text) {
+        rows.push(`<div class="ds-entry">
+          <div class="ds-name">${slot.emoji} ${slot.name}<span class="ds-time">${fmtTime(e.time)}</span></div>
+          <div class="ds-text">${esc(e.text)}</div>
+          ${e.note ? `<div class="ds-note">${esc(e.note)}</div>` : ''}
+        </div>`);
+      }
+    });
+    (day.extras || []).forEach(x => {
+      if (x.text) rows.push(`<div class="ds-entry">
+        <div class="ds-name">✚ Autre<span class="ds-time">${fmtTime(x.time)}</span></div>
+        <div class="ds-text">${esc(x.text)}</div>
+        ${x.note ? `<div class="ds-note">${esc(x.note)}</div>` : ''}
+      </div>`);
+    });
+    if (day.activity) {
+      rows.push(`<div class="ds-entry"><div class="ds-name">💪 Activité</div><div class="ds-text">${esc(day.activityText || 'Effectuée')}</div></div>`);
+    }
+    if (day.globalNote) {
+      rows.push(`<div class="ds-entry"><div class="ds-name">💬 Note du jour</div><div class="ds-text">${esc(day.globalNote)}</div></div>`);
+    }
+    body.innerHTML = rows.join('') || '<p class="ds-empty">Aucune donnée.</p>';
+  }
+
+  document.getElementById('day-sheet').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
 }
 
 // ── NOTIFICATIONS ──
 async function toggleNotif() {
-  const current = getState().notif;
-  if (!current) {
+  const s = getState();
+  if (!s.notif) {
     if ('Notification' in window) {
       const perm = await Notification.requestPermission();
       if (perm !== 'granted') {
-        showToast('⚠️ Autorise les notifications dans les réglages');
+        showToast('⚠️ Autorise les notifications dans Réglages');
         return;
       }
+    } else {
+      showToast('⚠️ Notifications non supportées ici');
+      return;
     }
     setNotif(true);
-    scheduleCollationReminders();
-    showToast('🔔 Rappels collation activés !');
+    scheduleReminders();
+    showToast('🔔 Rappels collation activés');
   } else {
     setNotif(false);
     showToast('🔕 Rappels désactivés');
   }
-  updateNotifUI();
+  updateNotifBtn();
 }
 
-function scheduleCollationReminders() {
+function updateNotifBtn() {
+  document.getElementById('notif-btn').classList.toggle('on', getState().notif);
+}
+
+function scheduleReminders() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const reminders = [
-    { h: 10, m: 0, msg: '🍎 Collation du matin ! 1 fruit ou compote sans sucre ajouté' },
-    { h: 16, m: 0, msg: '🍎 Collation de l\'après-midi ! 1 fruit ou compote sans sucre ajouté' }
-  ];
-  reminders.forEach(({ h, m, msg }) => {
-    const now = new Date();
+  [{ h: 10, m: 0, msg: '🍎 Collation du matin — 1 fruit ou compote sans sucre' },
+   { h: 16, m: 0, msg: '🍎 Collation de l\'après-midi — 1 fruit ou compote sans sucre' }
+  ].forEach(({ h, m, msg }) => {
     const target = new Date();
     target.setHours(h, m, 0, 0);
-    const diff = target - now;
-    if (diff > 0) {
-      setTimeout(() => {
-        if (getState().notif) {
-          new Notification('NutriLine — Rappel collation', {
-            body: msg,
-            icon: 'icons/icon-192.png',
-            badge: 'icons/icon-192.png'
-          });
-        }
-      }, diff);
-    }
+    const diff = target - Date.now();
+    if (diff > 0) setTimeout(() => {
+      if (getState().notif) new Notification('NutriLine', { body: msg, icon: 'icons/icon-192.png' });
+    }, diff);
   });
 }
 
 // ── INIT ──
 function init() {
-  // Splash
-  setTimeout(() => {
-    document.getElementById('splash').classList.add('hidden');
-  }, 1200);
-
-  // Header
-  document.getElementById('header-date').textContent = formatDate();
-  document.getElementById('greeting').textContent = getGreeting();
-  document.getElementById('journal-date-label').textContent = formatDate();
-
-  // Render all
-  renderMealsList();
-  renderHydroTrack();
+  renderTodayHead();
+  renderTimeline();
+  renderActivity();
   renderPlan();
-  updateHomeStats();
-  updateActivityUI();
-  updateNotifUI();
+  updateNotifBtn();
 
-  // Quick note
-  const qn = document.getElementById('quick-note');
-  qn.value = getState().quickNote || '';
-  qn.addEventListener('input', e => setQuickNote(e.target.value));
+  const s = getState();
+  document.getElementById('global-note').value = s.globalNote || '';
+  document.getElementById('global-note').addEventListener('input', e => setGlobalNote(e.target.value));
 
-  // Activity input
+  document.getElementById('activity-toggle').addEventListener('click', () => {
+    setActivity(!getState().activity);
+    renderActivity();
+    if (getState().activity) showToast('💪 Activité notée');
+  });
   document.getElementById('activity-input').addEventListener('input', e => {
     setActivityText(e.target.value);
+    document.getElementById('activity-sub').textContent = e.target.value || 'Activité faite ✓';
   });
 
-  // Global journal textarea
-  document.getElementById('j-global').addEventListener('input', e => {
-    setJournal('global', e.target.value);
-  });
+  document.querySelectorAll('.nav-btn').forEach(b =>
+    b.addEventListener('click', () => showScreen(b.dataset.screen)));
 
-  // Nav buttons
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => showScreen(btn.dataset.screen));
-  });
-
-  // Notif button
   document.getElementById('notif-btn').addEventListener('click', toggleNotif);
 
-  // Activity toggle
-  document.getElementById('activity-toggle').addEventListener('click', toggleActivity);
+  // sheets
+  document.getElementById('overlay').addEventListener('click', closeSheets);
+  document.getElementById('sheet-close').addEventListener('click', closeSheets);
+  document.getElementById('day-sheet-close').addEventListener('click', closeSheets);
+  document.getElementById('sheet-save').addEventListener('click', saveSheet);
+  document.getElementById('sheet-delete').addEventListener('click', deleteSheet);
 
-  // Save journal button
-  document.getElementById('save-journal-btn').addEventListener('click', () => {
-    saveState();
-    showToast('✅ Journal sauvegardé !');
+  // calendrier
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar();
+  });
+  document.getElementById('cal-next').addEventListener('click', () => {
+    calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar();
   });
 
-  // Keyboard accessibility for meal rows
-  document.getElementById('meals-list').addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      const row = e.target.closest('.meal-row');
-      if (row) { e.preventDefault(); row.click(); }
-    }
-  });
+  document.getElementById('open-export').addEventListener('click', () => showScreen('export'));
 
-  // Re-schedule notifs if they were on
-  if (getState().notif) scheduleCollationReminders();
+  if (s.notif) scheduleReminders();
 
-  // ── WATER FAB ──
-  initWaterFab();
-}
-
-function renderWaterPanel() {
-  const count = getState().hydro;
-  document.getElementById('water-big-num').textContent = count;
-  document.getElementById('water-fab-count').textContent = `${count}/6`;
-
-  const row = document.getElementById('water-glasses-row');
-  row.innerHTML = Array.from({length: 6}, (_, i) => `
-    <div class="water-glass-big ${i < count ? 'filled' : ''}" 
-         onclick="quickSetHydro(${i})" 
-         aria-label="Verre ${i+1}"></div>
-  `).join('');
-}
-
-function quickSetHydro(i) {
-  const current = getState().hydro;
-  const newVal = (i < current) ? i : i + 1;
-  setHydro(newVal);
-  renderWaterPanel();
-  // Sync home screen if visible
-  renderHydroTrack();
-  updateHomeStats();
-  if (newVal >= 6) showToast('🎉 Objectif hydratation atteint !');
-}
-
-function openWaterPanel() {
-  renderWaterPanel();
-  document.getElementById('water-panel').classList.add('open');
-  document.getElementById('water-overlay').classList.add('show');
-  document.getElementById('water-panel').setAttribute('aria-hidden', 'false');
-}
-
-function closeWaterPanel() {
-  document.getElementById('water-panel').classList.remove('open');
-  document.getElementById('water-overlay').classList.remove('show');
-  document.getElementById('water-panel').setAttribute('aria-hidden', 'true');
-}
-
-function initWaterFab() {
-  renderWaterPanel();
-
-  document.getElementById('water-fab').addEventListener('click', openWaterPanel);
-  document.getElementById('water-panel-close').addEventListener('click', closeWaterPanel);
-  document.getElementById('water-overlay').addEventListener('click', closeWaterPanel);
-
-  document.getElementById('water-plus').addEventListener('click', () => {
-    const current = getState().hydro;
-    if (current < 6) {
-      setHydro(current + 1);
-      renderWaterPanel();
-      renderHydroTrack();
-      updateHomeStats();
-      if (getState().hydro >= 6) showToast('🎉 Objectif hydratation atteint !');
-    } else {
-      showToast('✅ Objectif déjà atteint !');
-    }
-  });
-
-  document.getElementById('water-minus').addEventListener('click', () => {
-    const current = getState().hydro;
-    if (current > 0) {
-      setHydro(current - 1);
-      renderWaterPanel();
-      renderHydroTrack();
-      updateHomeStats();
-    }
-  });
+  // passage de minuit : recharger si le jour change pendant que l'app est ouverte
+  setInterval(() => {
+    if (localKey() !== TODAY_KEY) location.reload();
+  }, 60 * 1000);
 }
 
 document.addEventListener('DOMContentLoaded', init);
